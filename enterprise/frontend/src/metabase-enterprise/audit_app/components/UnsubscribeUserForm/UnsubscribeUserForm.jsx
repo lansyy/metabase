@@ -26,6 +26,7 @@ const UnsubscribeUserForm = ({ user, onUnsubscribe, onClose }) => {
 
   return (
     <ModalContent
+      // XXX: Change to email since identity is needed
       title={t`Unsubscribe ${user.common_name} from all subscriptions and alerts?`}
       footer={[
         error ? <FormMessage key="message" formError={error} /> : null,
@@ -39,6 +40,7 @@ const UnsubscribeUserForm = ({ user, onUnsubscribe, onClose }) => {
       onClose={onClose}
     >
       <ModalMessage>
+        {/* XXX: Change to email since identity is needed */}
         {t`This will delete any dashboard subscriptions or alerts ${user.common_name} has created, and remove them as a recipient from any other subscriptions or alerts.`}
       </ModalMessage>
       <ModalMessage>
