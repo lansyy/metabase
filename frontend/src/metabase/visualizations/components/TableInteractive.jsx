@@ -38,6 +38,7 @@ import MiniBar from "./MiniBar";
 import Ellipsified from "metabase/core/components/Ellipsified";
 import DimensionInfoPopover from "metabase/components/MetadataInfo/DimensionInfoPopover";
 
+const MAX_WIDTH = 300;
 const HEADER_HEIGHT = 36;
 const ROW_HEIGHT = 36;
 const SIDEBAR_WIDTH = 38;
@@ -74,6 +75,7 @@ class TableInteractive extends Component {
     super(props);
 
     this.state = {
+      columnIsExpanded: [],
       columnWidths: [],
       contentWidths: null,
       showDetailShortcut: true,
@@ -497,6 +499,8 @@ class TableInteractive extends Component {
       column.name,
     );
 
+    const isCollapsed = this.isColumnCollapsed(columnIndex);
+
     return (
       <div
         key={key}
@@ -544,6 +548,11 @@ class TableInteractive extends Component {
         tabIndex="0"
       >
         {this.props.renderTableCellWrapper(cellData)}
+        {isCollapsed && (
+          <button onClick={() => this.handleExpandColumn(columnIndex)}>
+            ...
+          </button>
+        )}
       </div>
     );
   };
@@ -823,14 +832,42 @@ class TableInteractive extends Component {
     return this.getColumnWidth({ index: dataIndex });
   };
 
-  getColumnWidth = ({ index }) => {
+  handleExpandColumn = index => {
+    this.setState(
+      prevState => {
+        const columnIsExpanded = prevState.columnIsExpanded.slice();
+        columnIsExpanded[index] = true;
+        return { columnIsExpanded };
+      },
+      () => this.recomputeGridSize(),
+    );
+  };
+
+  isColumnCollapsed = index => {
     const { settings } = this.props;
-    const { columnWidths } = this.state;
+    const { columnWidths, columnIsExpanded } = this.state;
     const columnWidthsSetting = settings["table.column_widths"] || [];
 
-    return (
-      columnWidthsSetting[index] || columnWidths[index] || MIN_COLUMN_WIDTH
-    );
+    const hasExplicitWidth = !!columnWidthsSetting[index];
+    const isExpanded = columnIsExpanded[index];
+
+    return !hasExplicitWidth && columnWidths[index] > MAX_WIDTH && !isExpanded;
+  };
+
+  getColumnWidth = ({ index }) => {
+    const { settings } = this.props;
+    const { columnWidths, columnIsExpanded } = this.state;
+    const columnWidthsSetting = settings["table.column_widths"] || [];
+    const explicitWidth = columnWidthsSetting[index];
+
+    if (explicitWidth) {
+      return explicitWidth;
+    }
+
+    const isExpanded = columnIsExpanded[index];
+    const calculatedWidth = columnWidths[index] || MIN_COLUMN_WIDTH;
+
+    return isExpanded ? calculatedWidth : Math.min(calculatedWidth, MAX_WIDTH);
   };
 
   handleHoverRow = (event, rowIndex) => {
